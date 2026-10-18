@@ -1,0 +1,26 @@
+# Isolated integration run; always use a separate project name (-p).
+services:
+  api:
+    ports: !reset []
+    environment:
+      API_KEY: integration-test-key
+  rabbitmq:
+    ports: !reset []
+  consumer:
+    environment:
+      API_KEY: integration-test-key
+  tests:
+    build: .
+    command: python -B -m unittest discover -s tests -v
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/payments_db
+      RABBITMQ_URL: amqp://payments:payments@rabbitmq:5672/
+      API_KEY: integration-test-key
+      RUN_INTEGRATION: "1"
+      TEST_API_URL: http://api:8000
+      TEST_WEBHOOK_BASE: http://tests:9000
+    depends_on:
+      api:
+        condition: service_healthy
+      consumer:
+        condition: service_started
